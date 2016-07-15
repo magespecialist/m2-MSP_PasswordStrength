@@ -1,0 +1,82 @@
+<?php
+/**
+ * IDEALIAGroup srl
+ *
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the Open Software License (OSL 3.0)
+ * that is bundled with this package in the file LICENSE.txt.
+ * It is also available through the world-wide-web at this URL:
+ * http://opensource.org/licenses/osl-3.0.php
+ * If you did not receive a copy of the license and are unable to
+ * obtain it through the world-wide-web, please send an email
+ * to info@idealiagroup.com so we can send you a copy immediately.
+ *
+ * @category   MSP
+ * @package    MSP_PasswordStrength
+ * @copyright  Copyright (c) 2016 IDEALIAGroup srl (http://www.idealiagroup.com)
+ * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ */
+
+/** @var $block  MSP\PasswordStrength\Block\Adminhtml\Validate */
+?>
+<script>
+    require([
+        'jquery',
+        'jquery/validate',
+        'mage/translate',
+        'MSP_PasswordStrength/js/progressbar',
+        'MSP_PasswordStrength/js/zxcvbn'
+    ], function($, validate, translate, progressbar, zxcvbn) {
+        this.strengthLevels = <?php echo $block->getStengthLevelsJs() ?>;
+        this.strengthBar = false;
+        this.minStrengthLevel = <?php echo $block->getMinLevel() ?>;
+
+        var me = this;
+
+        this.mspUpdatePasswordStrength = function (value) {
+            var strengthScore = zxcvbn(value).score;
+            me.strengthBar.animate(0.20 * (strengthScore + 1));
+
+            var text = me.strengthLevels[strengthScore];
+            $('#msp_passwordstrength_label').html(text);
+        };
+
+        this.$passwordField = $('#user_password').length ? $('#user_password') : $('#password');
+
+        $.validator.addMethod(
+            'validate-password-strength', function (value) {
+                var strengthScore = zxcvbn(value).score;
+                return (strengthScore >= me.minStrengthLevel);
+            }, $.mage.__('Your password is too simple to guess!')
+        );
+
+        me.$passwordField.keyup(function () {
+            me.mspUpdatePasswordStrength(this.value);
+        });
+
+        me.$passwordField.after(
+            '<div id="msp_passwordstrength">'
+            +'<div id="msp_passwordstrength_label"></div>'
+            +'<div id="msp_passwordstrength_bar"></div>'
+            +'</div>');
+
+        me.$passwordField.attr('data-validate',
+            "{required:true, 'validate-password':true, 'validate-password-strength':true}");
+
+        $(function () {
+            me.strengthBar = new progressbar.Line('#msp_passwordstrength_bar', {
+                from: {color: '#cc0000'},
+                to: {color: '#00ff00'},
+                strokeWidth: 2,
+                easing: 'easeInOut',
+                duration: 300,
+                step: function (state, bar, attachment) {
+                    bar.path.setAttribute('stroke', state.color);
+                }
+            });
+
+            me.mspUpdatePasswordStrength(me.$passwordField[0].value);
+        });
+    });
+</script>
