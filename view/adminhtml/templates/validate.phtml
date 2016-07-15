@@ -46,6 +46,11 @@ require([
 
     $.validator.addMethod(
         'validate-password-strength', function (value) {
+            value = value.trim();
+            if (!value.length) {
+                return true;
+            }
+
             var strengthScore = zxcvbn(value).score;
             return (strengthScore >= me.minStrengthLevel);
         }, $.mage.__('Your password is too simple to guess!')
@@ -62,7 +67,7 @@ require([
         +'</div>');
 
     me.$passwordField.attr('data-validate',
-        "{required:true, 'validate-password':true, 'validate-password-strength':true}");
+        "{'validate-admin-password':true, 'validate-password-strength':true}");
 
     $(function () {
         me.strengthBar = new progressbar.Line('#msp_passwordstrength_bar', {
